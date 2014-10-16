@@ -190,7 +190,7 @@ if __name__ == '__main__':
                         sys.argv.pop(1)
                     else:
                         value = 0
-                        cmd = COMMAND_SET_POWER
+                    cmd = COMMAND_SET_POWER
                 elif option == '-v':
                     verbose = True
                     #if len(sys.argv) == 1:
@@ -207,8 +207,8 @@ if __name__ == '__main__':
     if hub == None and busnum == None:
         hub = 0                 # Default hub = 0
 
-    if cmd == COMMAND_SET_NONE:
-        cmd = COMMAND_SET_POWER
+    #if cmd == COMMAND_SET_NONE:
+    #    cmd = COMMAND_SET_POWER
 
     hubs = find_hubs(listing, verbose, busnum, devnum, hub)
     if len(hubs) == 0:
@@ -226,22 +226,22 @@ if __name__ == '__main__':
         dev_hub = hubs[hub]['dev']
         nports = hubs[hub]['num_ports']
 
-    if cmd == COMMAND_SET_POWER:
-        feature = USB_PORT_FEAT_POWER
-        index = port
-        if value:
-            request = usb.REQ_SET_FEATURE
+    if cmd != COMMAND_SET_NONE:
+        if cmd == COMMAND_SET_POWER:
+            feature = USB_PORT_FEAT_POWER
+            index = port
+            if value:
+                request = usb.REQ_SET_FEATURE
+            else:
+                request = usb.REQ_CLEAR_FEATURE
         else:
-            request = usb.REQ_CLEAR_FEATURE
-    else:
-        request = usb.REQ_SET_FEATURE
-        feature = USB_PORT_FEAT_INDICATOR
-        index = (value << 8) | port
-    if verbose:
-        print "Send control message (REQUEST=%d, FEATURE=%d, INDEX=%d) " % (request, feature, index)
+            request = usb.REQ_SET_FEATURE
+            feature = USB_PORT_FEAT_INDICATOR
+            index = (value << 8) | port
+        if verbose:
+            print "Send control message (REQUEST=%d, FEATURE=%d, INDEX=%d) " % (request, feature, index)
 
-
-    dev_hub.ctrl_transfer(USB_RT_PORT, request, wValue = feature, wIndex=index, data_or_wLength=None, timeout=1000)
+        dev_hub.ctrl_transfer(USB_RT_PORT, request, wValue = feature, wIndex=index, data_or_wLength=None, timeout=1000)
 
     if verbose:
         hub_port_status(dev_hub, nports)

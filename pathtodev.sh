@@ -19,4 +19,8 @@ if [ -z "$DEV_PATH" ]; then
 	usage; exit 1
 fi
 
-udevadm info /sys/bus/usb/devices/$DEV_PATH --query=property | egrep 'DEVNUM' | sed 's/DEVNUM=//g' | sed 's/^0*//'
+if [ -L "/sys/bus/usb/devices/$DEV_PATH" ] ; then
+	udevadm info /sys/bus/usb/devices/$DEV_PATH --query=property | egrep 'DEVNUM' | sed 's/DEVNUM=//g' | sed 's/^0*//'
+else
+	exit 1
+fi

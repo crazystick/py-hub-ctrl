@@ -1,4 +1,4 @@
-#! /usr/bin/python2
+#!/usr/bin/env python2
 
 """
 hub_ctrl.py - a tool to control port power/led of USB hub
@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Modified 2014 Paul Adams - updated to be compatible with pyusb 1.0.0b1
 """
 
+import errno
 import usb.core
 
 USB_RT_HUB		=	(usb.TYPE_CLASS | usb.RECIP_DEVICE)
@@ -57,11 +58,17 @@ def find_hubs(listing, verbose, busnum=None, devnum=None, hub=None):
         
         desc = None
         # Get USB Hub descriptor
-        desc = dev.ctrl_transfer(USB_DIR_IN | USB_RT_HUB,
-                                 usb.REQ_GET_DESCRIPTOR,
-                                 wValue = usb.DT_HUB << 8,
-                                 wIndex = 0,
-                                 data_or_wLength = 1024, timeout = 1000)
+        try:
+            desc = dev.ctrl_transfer(USB_DIR_IN | USB_RT_HUB,
+                                     usb.REQ_GET_DESCRIPTOR,
+                                     wValue = usb.DT_HUB << 8,
+                                     wIndex = 0,
+                                     data_or_wLength = 1024, timeout = 1000)
+        except usb.core.USBError as e:
+            # allow EACCESS to pass
+            if e.errno != errno.EACCES:
+                raise
+
         if not desc:
             continue
 
@@ -152,6 +159,7 @@ if __name__ == '__main__':
     port = 1
     cmd = COMMAND_SET_NONE
 
+    value = None
     if len(sys.argv) == 1:
         listing = True
     else:
@@ -197,8 +205,11 @@ if __name__ == '__main__':
                     #    listing = True
                 else:
                     exit_with_usage(sys.argv[0])
-        except:
+        except Exception:
             exit_with_usage(sys.argv[0])
+
+    if value is None:
+        listing = True
 
     if ((busnum != None and devnum == None)
         or (busnum == None and devnum != None)):
@@ -217,6 +228,7 @@ if __name__ == '__main__':
     if listing:
         exit(0)
 
+    dev_hub = None
     if hub == None:
         for h in hubs:
             if h['busnum'] == busnum and h['devnum'] == devnum:
@@ -225,6 +237,10 @@ if __name__ == '__main__':
     else:
         dev_hub = hubs[hub]['dev']
         nports = hubs[hub]['num_ports']
+
+    if dev_hub is None:
+        print >> sys.stderr, 'The specified device is not a USB hub, aborting'
+        sys.exit(3)
 
     if cmd != COMMAND_SET_NONE:
         if cmd == COMMAND_SET_POWER:

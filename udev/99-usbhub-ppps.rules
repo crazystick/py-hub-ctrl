@@ -1,0 +1,1 @@
+SUBSYSTEM=="usb", ATTRS{bDeviceClass}=="09", OWNER="root", GROUP="usbhub", MODE="0660", SYMLINK="usbhub%n"
